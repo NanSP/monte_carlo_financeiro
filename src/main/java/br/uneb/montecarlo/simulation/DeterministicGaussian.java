@@ -1,10 +1,17 @@
 package br.uneb.montecarlo.simulation;
 
-/** A standard normal draw determined only by the seed and trajectory index. */
+/** A standard normal generator whose draws depend only on seed and trajectory index. */
 public final class DeterministicGaussian {
     private static final long GAMMA = 0x9E3779B97F4A7C15L;
 
-    private DeterministicGaussian() {
+    private final long seed;
+
+    public DeterministicGaussian(long seed) {
+        this.seed = seed;
+    }
+
+    public double sample(long index) {
+        return sample(seed, index);
     }
 
     public static double sample(long seed, long index) {

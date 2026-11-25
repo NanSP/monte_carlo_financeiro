@@ -18,7 +18,12 @@ Dois passos SplitMix64 sobre `key` e `key + constante` geram uniformes no
 intervalo aberto `(0, 1)`; Box-Muller produz `Z`. Threads, processos MPJ e
 work-items OpenCL devem usar os mesmos índices e essa mesma regra.
 
-A ordem das somas em ponto flutuante também afeta os últimos bits. As futuras
-versões paralelas devem definir uma ordem de redução e declarar a tolerância
-numérica usada para comparar CPU e OpenCL. O cálculo sequencial usa a
-recorrência de Welford para média e variância.
+As implementações Java processam blocos canônicos de 8192 trajetórias. A
+versão sequencial percorre os blocos na ordem; a versão `STATIC` reparte faixas
+de blocos entre as threads; a `DYNAMIC` entrega o próximo bloco livre a cada
+thread. Cada bloco acumula média e variância com Welford. Ao final, os blocos
+são combinados em ordem crescente de índice, dando o mesmo resultado Java
+independentemente do escalonamento.
+
+OpenCL pode usar funções matemáticas com arredondamento diferente. A futura
+comparação com GPU precisará declarar uma tolerância numérica apropriada.
