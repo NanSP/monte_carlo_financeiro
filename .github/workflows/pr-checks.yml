@@ -28,3 +28,6 @@ jobs:
 
       - name: Check pricing foundation
         run: java -cp target/classes:target/test-classes br.uneb.montecarlo.FoundationCheck
+
+      - name: Check benchmark command
+        run: java -cp target/classes br.uneb.montecarlo.BenchmarkMain 8193 4 1 42

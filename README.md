@@ -16,9 +16,13 @@ O contrato `PricingEngine` será usado pelas futuras implementações MPJ e
 OpenCL. As pastas `api`, `client` e `coordinator` estão reservadas para o
 serviço distribuído com RMI e sockets TCP.
 
-## Compilação
+## Compilação e benchmark
 
 Requer JDK 17 ou superior. O projeto contém um `pom.xml` para Maven, mas o
 núcleo atual não depende de bibliotecas externas. A verificação independente
-`br.uneb.montecarlo.FoundationCheck` compara as versões e pode ser executada
-com `javac` e `java`. Ela também é executada na esteira de pull requests.
+`br.uneb.montecarlo.FoundationCheck` compara as versões e é executada na
+esteira de pull requests.
+
+Para medir tempo, speedup e eficiência no Windows, execute
+`.\scripts\benchmark.ps1 -Trajectories 1000000 -Workers 4 -Repetitions 5`.
+O resultado é CSV; consulte [a metodologia](docs/benchmark.md).

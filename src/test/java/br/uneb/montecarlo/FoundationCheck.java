@@ -34,10 +34,11 @@ public final class FoundationCheck {
         assertThreadedEquals(sequential, p, 1);
         assertThreadedEquals(sequential, p, 4);
         assertThreadedEquals(sequential, p, 16);
-        for (long trajectories : new long[] { 2, 8_192, 8_193, 16_384, 16_385 }) {
+        for (long trajectories : new long[] { 2, 8_191, 8_192, 8_193, 16_384, 16_385 }) {
             OptionParameters boundary = new OptionParameters(100, 105, 0.01, 0.30, 2,
                     trajectories, 123);
             assertThreadedEquals(sequential, boundary, 3);
+            assertThreadedEquals(sequential, boundary, 32);
         }
 
         OptionParameters noVolatility = new OptionParameters(100, 100, 0.05, 0, 1, 2, 7);
@@ -49,6 +50,14 @@ public final class FoundationCheck {
             throw new AssertionError("invalid initial price was accepted");
         } catch (IllegalArgumentException expected) {
             // Expected.
+        }
+        for (Distribution distribution : Distribution.values()) {
+            try {
+                new ThreadedPricingEngine(0, distribution);
+                throw new AssertionError("invalid worker count was accepted");
+            } catch (IllegalArgumentException expected) {
+                // Expected.
+            }
         }
         System.out.println("Foundation checks passed. Price=" + estimate.price()
                 + ", Black-Scholes=" + analytic);
