@@ -12,6 +12,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import br.uneb.montecarlo.model.OptionParameters;
 import br.uneb.montecarlo.model.PriceEstimate;
 import br.uneb.montecarlo.simulation.PricingEngine;
+import br.uneb.montecarlo.simulation.ProgressListener;
 import br.uneb.montecarlo.simulation.RunningMoments;
 import br.uneb.montecarlo.simulation.SimulationKernel;
 
@@ -30,6 +31,16 @@ public final class ThreadedPricingEngine implements PricingEngine {
 
     @Override
     public PriceEstimate price(OptionParameters parameters) {
+        return calculate(parameters, null);
+    }
+
+    @Override
+    public PriceEstimate price(OptionParameters parameters, ProgressListener listener) {
+        Objects.requireNonNull(listener, "listener");
+        return calculate(parameters, listener);
+    }
+
+    private PriceEstimate calculate(OptionParameters parameters, ProgressListener listener) {
         Objects.requireNonNull(parameters, "parameters");
         long blocksLong = SimulationKernel.blockCount(parameters.trajectories());
         if (blocksLong > Integer.MAX_VALUE) {
@@ -38,6 +49,8 @@ public final class ThreadedPricingEngine implements PricingEngine {
         int blockCount = (int) blocksLong;
         int workers = Math.min(requestedWorkers, blockCount);
         RunningMoments[] results = new RunningMoments[blockCount];
+        RunningMoments partial = new RunningMoments();
+        Object progressLock = new Object();
         AtomicInteger nextBlock = new AtomicInteger();
         ExecutorService executor = Executors.newFixedThreadPool(workers);
         List<Future<?>> futures = new ArrayList<>(workers);
@@ -52,14 +65,16 @@ public final class ThreadedPricingEngine implements PricingEngine {
                         int first = workerIndex * each + Math.min(workerIndex, remainder);
                         int end = first + each + (workerIndex < remainder ? 1 : 0);
                         for (int block = first; block < end; block++) {
-                            computeBlock(kernel, parameters.trajectories(), results, block);
+                            computeBlock(kernel, parameters.trajectories(), results, block,
+                                    partial, progressLock, listener);
                         }
                     } else {
                         while (true) {
                             int block = nextBlock.getAndUpdate(
                                     current -> current < blockCount ? current + 1 : current);
                             if (block >= blockCount) break;
-                            computeBlock(kernel, parameters.trajectories(), results, block);
+                            computeBlock(kernel, parameters.trajectories(), results, block,
+                                    partial, progressLock, listener);
                         }
                     }
                 }));
@@ -86,8 +101,18 @@ public final class ThreadedPricingEngine implements PricingEngine {
     }
 
     private static void computeBlock(SimulationKernel kernel, long trajectories,
-            RunningMoments[] results, int block) {
-        results[block] = kernel.block(SimulationKernel.blockStart(block),
+            RunningMoments[] results, int block, RunningMoments partial,
+            Object progressLock, ProgressListener listener) {
+        RunningMoments completed = kernel.block(SimulationKernel.blockStart(block),
                 SimulationKernel.blockEnd(block, trajectories));
+        results[block] = completed;
+        if (listener != null) {
+            synchronized (progressLock) {
+                partial.merge(completed);
+                if (partial.count() >= 2) {
+                    listener.onProgress(partial.count(), partial.estimate());
+                }
+            }
+        }
     }
 }

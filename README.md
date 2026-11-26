@@ -12,16 +12,16 @@ threads: faixas fixas (`STATIC`) e blocos distribuídos entre trabalhadores
 (`DYNAMIC`). As três produzem o mesmo resultado para os mesmos parâmetros.
 Consulte [o algoritmo](docs/algorithm.md).
 
-O contrato `PricingEngine` será usado pelas futuras implementações MPJ e
-OpenCL. As pastas `api`, `client` e `coordinator` estão reservadas para o
-serviço distribuído com RMI e sockets TCP.
+O [coordenador](docs/jobs.md) aceita tarefas de múltiplos clientes, limita
+execuções e fila, publica estimativas parciais, registra falhas e permite
+cancelamento. A camada RMI/TCP e os motores MPJ e OpenCL serão conectados em
+etapas seguintes.
 
 ## Compilação e benchmark
 
 Requer JDK 17 ou superior. O projeto contém um `pom.xml` para Maven, mas o
-núcleo atual não depende de bibliotecas externas. A verificação independente
-`br.uneb.montecarlo.FoundationCheck` compara as versões e é executada na
-esteira de pull requests.
+núcleo atual não depende de bibliotecas externas. `FoundationCheck` e
+`CoordinatorCheck` são executados na esteira de pull requests.
 
 Para medir tempo, speedup e eficiência no Windows, execute
 `.\scripts\benchmark.ps1 -Trajectories 1000000 -Workers 4 -Repetitions 5`.

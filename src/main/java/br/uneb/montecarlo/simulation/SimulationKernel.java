@@ -1,6 +1,7 @@
 package br.uneb.montecarlo.simulation;
 
 import java.util.Objects;
+import java.util.concurrent.CancellationException;
 
 import br.uneb.montecarlo.model.OptionParameters;
 
@@ -30,6 +31,9 @@ public final class SimulationKernel {
         }
         RunningMoments moments = new RunningMoments();
         for (long index = start; index < end; index++) {
+            if ((index & 255L) == 0 && Thread.currentThread().isInterrupted()) {
+                throw new CancellationException("pricing interrupted");
+            }
             double z = generator.sample(index);
             double terminalPrice = parameters.initialPrice() * StrictMath.exp(drift + diffusion * z);
             double payoff = discount * Math.max(terminalPrice - parameters.strikePrice(), 0.0);
